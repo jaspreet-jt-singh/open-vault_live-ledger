@@ -4,10 +4,27 @@ import email
 import re
 import hashlib
 import datetime
+from email.utils import parsedate_to_datetime
 from supabase import create_client
 from dotenv import load_dotenv
 
 load_dotenv()  # Load .env file if present
+
+def parse_email_date(email_date_str):
+    """Parse email date and format as local IST time (no timezone for timestamp column)"""
+    def format_ist(dt):
+        """Format datetime as local time: YYYY-MM-DD HH:MM:SS"""
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    
+    if not email_date_str:
+        return format_ist(datetime.datetime.now())
+    
+    try:
+        # Parse email date (handles formats like "Wed, 05 May 2026 14:30:00 +0530")
+        dt = parsedate_to_datetime(email_date_str)
+        return format_ist(dt)
+    except:
+        return format_ist(datetime.datetime.now())
 
 # Environment Variables (Set these in GitHub Secrets)
 EMAIL_USER = os.environ.get("GMAIL_USER")
@@ -109,9 +126,9 @@ def fetch_and_sync():
                 print(f"  -> Skipped: Already in database ({tx_ref})")
                 continue # Skip to the next email without attempting insert
 
-            # Push to Supabase
+            # Push to Supabase (email date is already in IST from HDFC)
             db_data = {
-                "tx_time": msg["Date"], 
+                "tx_time": parse_email_date(msg["Date"]),  # HDFC emails already in IST 
                 "type": t_type,
                 "amount": amount,
                 "sender_name": sender_name,
