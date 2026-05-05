@@ -3,6 +3,8 @@ import imaplib
 import email
 import re
 import hashlib
+import datetime
+from email.utils import parsedate_to_datetime
 from supabase import create_client
 from dotenv import load_dotenv
 
@@ -37,6 +39,7 @@ def fetch_and_sync():
         
         sender = msg.get("From", "Unknown")
         subject = msg.get("Subject", "No Subject")
+        email_date = msg.get("Date", "")
         print(f"Processing: {sender} | {subject[:50]}...")
         
         # Get Email Body (try plain text first, fallback to HTML)
@@ -108,8 +111,17 @@ def fetch_and_sync():
                 print(f"  -> Skipped: Already in database ({tx_ref})")
                 continue # Skip to the next email without attempting insert
 
-            # Push to Supabase (database sets tx_time automatically)
+            # Parse email date for transaction timestamp
+            try:
+                dt = parsedate_to_datetime(email_date)
+                # Format as YYYY-MM-DD HH:MM:SS for database
+                tx_time = dt.strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                tx_time = None
+
+            # Push to Supabase with email timestamp
             db_data = {
+                "tx_time": tx_time,
                 "type": t_type,
                 "amount": amount,
                 "sender_name": sender_name,
