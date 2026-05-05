@@ -10,14 +10,15 @@ import {
   User, 
   LogOut, 
   Plus,
-  Trash2,
   Edit3,
   ChevronLeft,
   ChevronRight,
   Search,
   TrendingUp,
   TrendingDown,
-  Clock
+  Clock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 export default function App() {
@@ -35,6 +36,7 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
+  const [showHidden, setShowHidden] = useState(false);
   const pageSize = 10;
 
   const isAuthParamPresent = new URLSearchParams(window.location.search).get('auth') === 'true';
@@ -51,27 +53,35 @@ export default function App() {
     });
 
     return () => subscription.unsubscribe();
-  }, [currentPage]); // Re-fetch whenever currentPage changes
+  }, [currentPage, showHidden]); // Re-fetch when page or hidden toggle changes
 
   const fetchTransactions = async () => {
     setLoading(true);
     const from = (currentPage - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('transactions')
       .select('*')
-      .order('tx_time', { ascending: false })
-      .range(from, to);
+      .order('tx_time', { ascending: false });
+    
+    // Filter hidden transactions unless showing them
+    if (!showHidden) {
+      query = query.eq('is_hidden', false);
+    }
+    
+    const { data, error } = await query.range(from, to);
 
     if (!error) {
       setTransactions(data);
       setHasMore(data.length === pageSize);
       
-      // Calculate stats from all transactions (fetch summary separately)
-      const { data: allData } = await supabase
-        .from('transactions')
-        .select('type, amount');
+      // Calculate stats from visible transactions only
+      let statsQuery = supabase.from('transactions').select('type, amount');
+      if (!showHidden) {
+        statsQuery = statsQuery.eq('is_hidden', false);
+      }
+      const { data: allData } = await statsQuery;
       
       if (allData) {
         const credit = allData.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
@@ -157,18 +167,20 @@ export default function App() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this transaction?')) return;
+  const handleToggleHide = async (tx) => {
+    const newHiddenState = !tx.is_hidden;
+    const action = newHiddenState ? 'hide' : 'unhide';
+    if (!confirm(`${action === 'hide' ? 'Hide' : 'Unhide'} this transaction?`)) return;
     
     const { error } = await supabase
       .from('transactions')
-      .delete()
-      .eq('id', id);
+      .update({ is_hidden: newHiddenState })
+      .eq('id', tx.id);
 
     if (!error) {
       fetchTransactions();
     } else {
-      alert('Error deleting: ' + error.message);
+      alert(`Error ${action}ing: ` + error.message);
     }
   };
 
@@ -283,9 +295,22 @@ export default function App() {
         {/* Admin Panel */}
         {user && (
           <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <Plus className="w-5 h-5 text-purple-400" />
-              <h2 className="text-lg font-semibold text-white">Add Transaction</h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Plus className="w-5 h-5 text-purple-400" />
+                <h2 className="text-lg font-semibold text-white">Add Transaction</h2>
+              </div>
+              <button
+                onClick={() => setShowHidden(!showHidden)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  showHidden 
+                    ? 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30' 
+                    : 'bg-white/5 text-slate-400 hover:bg-white/10'
+                }`}
+              >
+                {showHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                {showHidden ? 'Showing Hidden' : 'Show Hidden'}
+              </button>
             </div>
             <form onSubmit={handleManualCash} className="p-5 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl">
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
@@ -419,7 +444,11 @@ export default function App() {
                         </div>
                       </form>
                     ) : (
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/5 hover:border-white/10 hover:bg-white/10 transition-all group-hover:shadow-lg group-hover:shadow-black/20">
+                      <div className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 backdrop-blur-sm rounded-2xl border transition-all group-hover:shadow-lg group-hover:shadow-black/20 ${
+                        tx.is_hidden 
+                          ? 'bg-white/[0.02] border-white/[0.02] opacity-60' 
+                          : 'bg-white/5 border-white/5 hover:border-white/10 hover:bg-white/10'
+                      }`}>
                         {/* Top row: Icon, Details, Amount */}
                         <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                           {/* Rank & Icon */}
@@ -437,7 +466,14 @@ export default function App() {
                           {/* Transaction Details */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-medium text-white truncate">{tx.sender_name}</h3>
+                              <h3 className={`font-medium truncate ${tx.is_hidden ? 'text-slate-400 line-through' : 'text-white'}`}>
+                                {tx.sender_name}
+                              </h3>
+                              {tx.is_hidden && (
+                                <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-purple-500/20 text-purple-400 uppercase">
+                                  Hidden
+                                </span>
+                              )}
                             </div>
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                               <span className="flex items-center gap-1">
@@ -476,11 +512,15 @@ export default function App() {
                               <Edit3 className="w-4 h-4 text-slate-400 hover:text-purple-400" />
                             </button>
                             <button 
-                              onClick={() => handleDelete(tx.id)} 
-                              className="p-2 hover:bg-rose-500/10 rounded-lg transition-colors"
-                              title="Delete"
+                              onClick={() => handleToggleHide(tx)} 
+                              className={`p-2 rounded-lg transition-colors ${tx.is_hidden ? 'bg-purple-500/20 hover:bg-purple-500/30' : 'hover:bg-slate-500/10'}`}
+                              title={tx.is_hidden ? 'Unhide' : 'Hide'}
                             >
-                              <Trash2 className="w-4 h-4 text-slate-400 hover:text-rose-400" />
+                              {tx.is_hidden ? (
+                                <Eye className="w-4 h-4 text-purple-400" />
+                              ) : (
+                                <EyeOff className="w-4 h-4 text-slate-400 hover:text-slate-300" />
+                              )}
                             </button>
                           </div>
                         )}
