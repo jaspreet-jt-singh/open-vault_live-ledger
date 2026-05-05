@@ -34,6 +34,7 @@ export default function App() {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
 
   const isAuthParamPresent = new URLSearchParams(window.location.search).get('auth') === 'true';
@@ -75,7 +76,9 @@ export default function App() {
       if (allData) {
         const credit = allData.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
         const debit = allData.filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0);
-        setStats({ total: allData.length, credit, debit });
+        const total = allData.length;
+        setStats({ total, credit, debit });
+        setTotalPages(Math.ceil(total / pageSize));
       }
     }
     setLoading(false);
@@ -499,16 +502,19 @@ export default function App() {
               Previous
             </button>
             
-            <div className="flex items-center gap-2">
-              {Array.from({ length: Math.min(5, currentPage + 2) }, (_, i) => {
-                const page = i + Math.max(1, currentPage - 2);
-                if (page > currentPage + 1 && !hasMore) return null;
+            <div className="flex items-center gap-1">
+              {/* Show 2 pages before and 2 pages after current if available */}
+              {Array.from({ length: 5 }, (_, i) => {
+                const page = currentPage - 2 + i;
+                if (page < 1 || page > totalPages) return null;
+                const isCurrent = page === currentPage;
                 return (
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
+                    disabled={isCurrent}
                     className={`w-10 h-10 rounded-xl text-sm font-medium transition-all ${
-                      page === currentPage
+                      isCurrent
                         ? 'bg-linear-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25'
                         : 'bg-white/5 hover:bg-white/10 text-slate-400'
                     }`}
