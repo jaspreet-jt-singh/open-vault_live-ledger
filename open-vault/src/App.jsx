@@ -433,18 +433,6 @@ export default function App() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-medium text-white truncate">{tx.sender_name}</h3>
-                            <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full uppercase tracking-wider ${
-                              isCredit 
-                                ? 'bg-emerald-500/20 text-emerald-400' 
-                                : 'bg-rose-500/20 text-rose-400'
-                            }`}>
-                              {tx.type}
-                            </span>
-                            {tx.upi_id === 'CASH' && (
-                              <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-purple-500/20 text-purple-400 uppercase tracking-wider">
-                                Cash
-                              </span>
-                            )}
                           </div>
                           <div className="flex items-center gap-3 text-xs text-slate-500">
                             <span className="flex items-center gap-1">
@@ -466,9 +454,9 @@ export default function App() {
                           <p className={`text-lg font-bold font-mono ${isCredit ? 'text-emerald-400' : 'text-rose-400'}`}>
                             {isCredit ? '+' : '-'} {formatCurrency(tx.amount)}
                           </p>
-                          {tx.upi_id !== 'CASH' && (
-                            <p className="text-xs text-slate-500 mt-0.5">{tx.upi_id}</p>
-                          )}
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {tx.upi_id === 'CASH' ? 'Cash' : tx.upi_id}
+                          </p>
                         </div>
 
                         {/* Actions */}
