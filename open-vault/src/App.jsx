@@ -87,27 +87,34 @@ export default function App() {
 
   const handleManualCash = async (e) => {
     e.preventDefault();
-    // Format as local IST time (no timezone offset for timestamp column)
-    const now = new Date();
-    const pad = (n) => n.toString().padStart(2, '0');
-    const istTime = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    
+    // Generate unique cash reference
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const cashRef = `CASH-${timestamp}-${random}`;
     
     const cashData = {
-      tx_time: istTime,
+      // tx_time omitted - database sets it automatically
       type: cashForm.type,
       amount: parseFloat(cashForm.amount),
       sender_name: cashForm.name,
       upi_id: "CASH",
-      tx_ref: `CASH-${Date.now()}` 
+      tx_ref: cashRef
     };
 
-    const { error } = await supabase.from('transactions').insert([cashData]);
-    if (!error) {
+    const { data: inserted, error } = await supabase
+      .from('transactions')
+      .insert([cashData])
+      .select()
+      .single();
+      
+    if (!error && inserted) {
       setCashForm({ amount: "", name: "", type: "debit" });
-      setCurrentPage(1); 
+      setCurrentPage(1);
       fetchTransactions();
+      console.log('Added with DB time:', inserted.tx_time);
     } else {
-      alert('Error adding transaction: ' + error.message);
+      alert('Error adding transaction: ' + error?.message);
     }
   };
 
@@ -155,12 +162,18 @@ export default function App() {
   };
 
   const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
+    // Parse database timestamp directly without timezone conversion
+    const match = dateStr?.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d+)/);
+    if (!match) return { day: '-', month: '-', year: '-', time: '-' };
+    
+    const [, year, month, day, hour, minute] = match;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
     return {
-      day: date.getDate(),
-      month: date.toLocaleString('en-GB', { month: 'short' }),
-      year: date.getFullYear(),
-      time: date.toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit' })
+      day: parseInt(day),
+      month: months[parseInt(month) - 1],
+      year: year,
+      time: `${hour}:${minute}`
     };
   };
 
