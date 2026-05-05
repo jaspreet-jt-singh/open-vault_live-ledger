@@ -419,52 +419,55 @@ export default function App() {
                         </div>
                       </form>
                     ) : (
-                      <div className="flex items-center gap-4 p-4 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/5 hover:border-white/10 hover:bg-white/10 transition-all group-hover:shadow-lg group-hover:shadow-black/20">
-                        {/* Rank & Icon */}
-                        <div className="flex flex-col items-center gap-1">
-                          <span className="text-xs text-slate-500 font-mono">#{rankId}</span>
-                          <div className={`p-2 rounded-xl ${isCredit ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}>
-                            {isCredit ? (
-                              <ArrowDownRight className="w-4 h-4 text-emerald-400" />
-                            ) : (
-                              <ArrowUpRight className="w-4 h-4 text-rose-400" />
-                            )}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/5 hover:border-white/10 hover:bg-white/10 transition-all group-hover:shadow-lg group-hover:shadow-black/20">
+                        {/* Top row: Icon, Details, Amount */}
+                        <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                          {/* Rank & Icon */}
+                          <div className="flex flex-col items-center gap-1 shrink-0">
+                            <span className="text-xs text-slate-500 font-mono">#{rankId}</span>
+                            <div className={`p-2 rounded-xl ${isCredit ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}>
+                              {isCredit ? (
+                                <ArrowDownRight className="w-4 h-4 text-emerald-400" />
+                              ) : (
+                                <ArrowUpRight className="w-4 h-4 text-rose-400" />
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Transaction Details */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-medium text-white truncate">{tx.sender_name}</h3>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {date.day} {date.month}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {date.time}
+                              </span>
+                              <span className="font-mono text-slate-600">
+                                Ref: {tx.tx_ref?.toUpperCase()}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Amount */}
+                          <div className="text-right shrink-0">
+                            <p className={`text-lg font-bold font-mono ${isCredit ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {isCredit ? '+' : '-'} {formatCurrency(tx.amount)}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              {tx.upi_id === 'CASH' ? 'Cash' : tx.upi_id}
+                            </p>
                           </div>
                         </div>
 
-                        {/* Transaction Details */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium text-white truncate">{tx.sender_name}</h3>
-                          </div>
-                          <div className="flex items-center gap-3 text-xs text-slate-500">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {date.day} {date.month} {date.year}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {date.time}
-                            </span>
-                            <span className="font-mono text-slate-600">
-                              Ref: {tx.tx_ref?.substring(0, 8).toUpperCase()}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Amount */}
-                        <div className="text-right">
-                          <p className={`text-lg font-bold font-mono ${isCredit ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            {isCredit ? '+' : '-'} {formatCurrency(tx.amount)}
-                          </p>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            {tx.upi_id === 'CASH' ? 'Cash' : tx.upi_id}
-                          </p>
-                        </div>
-
-                        {/* Actions */}
+                        {/* Actions - always visible on mobile, hover on desktop */}
                         {user && (
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity justify-end sm:justify-start">
                             <button 
                               onClick={() => handleEdit(tx)} 
                               className="p-2 hover:bg-white/10 rounded-lg transition-colors"
