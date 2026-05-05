@@ -88,10 +88,18 @@ export default function App() {
   const handleManualCash = async (e) => {
     e.preventDefault();
     
-    // Generate unique cash reference
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const cashRef = `CASH-${timestamp}-${random}`;
+    // Fetch current transaction count for unique reference
+    const { count } = await supabase
+      .from('transactions')
+      .select('*', { count: 'exact', head: true });
+    
+    const txNum = (count || 0) + 1;
+    
+    // Generate numeric-only cash reference: DDHHMMNNNN (10 digits)
+    // Format: Day(2) + Hour(2) + Minute(2) + TxNumber(4)
+    const now = new Date();
+    const pad = (n, len = 2) => n.toString().padStart(len, '0');
+    const cashRef = `${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(txNum, 4)}`;
     
     const cashData = {
       // tx_time omitted - database sets it automatically
