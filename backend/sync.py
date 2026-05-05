@@ -103,6 +103,12 @@ def fetch_and_sync():
                 seed = f"{amount}-{m_id.decode()}"
                 tx_ref = hashlib.md5(seed.encode()).hexdigest()
 
+            # Check if transaction already exists to prevent burning tx_no sequences
+            existing = supabase.table("transactions").select("id").eq("tx_ref", tx_ref).execute()
+            if len(existing.data) > 0:
+                print(f"  -> Skipped: Already in database ({tx_ref})")
+                continue # Skip to the next email without attempting insert
+
             # Push to Supabase
             db_data = {
                 "tx_time": msg["Date"], 
