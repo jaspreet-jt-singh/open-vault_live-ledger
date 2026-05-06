@@ -580,7 +580,7 @@ export default function App() {
 
                           {/* Amount + UPI ID - right aligned */}
                           <div className="text-right shrink-0 max-w-[120px] sm:max-w-[180px]">
-                            <p className={`text-lg font-bold font-mono ${isCredit ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            <p className={`text-lg font-bold font-mono whitespace-nowrap ${isCredit ? 'text-emerald-400' : 'text-rose-400'}`}>
                               {isCredit ? '+' : '-'} {formatCurrency(tx.amount)}
                             </p>
                             {tx.upi_id === 'CASH' ? (
@@ -588,16 +588,19 @@ export default function App() {
                             ) : (
                               (() => {
                                 const atIndex = tx.upi_id.indexOf('@');
+                                // Replace hyphens with non-breaking hyphens to prevent line breaks
+                                const safeUpi = tx.upi_id.replace(/-/g, '\u2011');
                                 if (atIndex > -1 && tx.upi_id.length > 20) {
+                                  const safeAtIndex = safeUpi.indexOf('@');
                                   // Split at @ for long UPI IDs on mobile
                                   return (
                                     <p className="text-xs text-slate-400 mt-1 sm:whitespace-nowrap">
-                                      <span className="block sm:inline">{tx.upi_id.slice(0, atIndex)}</span>
-                                      <span className="block sm:inline">@{tx.upi_id.slice(atIndex + 1)}</span>
+                                      <span className="block sm:inline">{safeUpi.slice(0, safeAtIndex)}</span>
+                                      <span className="block sm:inline">@{safeUpi.slice(safeAtIndex + 1)}</span>
                                     </p>
                                   );
                                 }
-                                return <p className="text-xs text-slate-400 mt-1 sm:whitespace-nowrap">{tx.upi_id}</p>;
+                                return <p className="text-xs text-slate-400 mt-1 sm:whitespace-nowrap">{safeUpi}</p>;
                               })()
                             )}
                           </div>
