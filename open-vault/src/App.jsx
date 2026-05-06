@@ -580,8 +580,8 @@ export default function App() {
 
                           {/* Amount + UPI ID - right aligned */}
                           <div className="text-right shrink-0 max-w-[120px] sm:max-w-[180px]">
-                            <p className={`text-lg font-bold font-mono whitespace-nowrap ${isCredit ? 'text-emerald-400' : 'text-rose-400'}`}>
-                              {isCredit ? '+' : '-'} {formatCurrency(tx.amount)}
+                            <p className={`text-lg font-bold font-mono ${isCredit ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              <span className="whitespace-nowrap">{isCredit ? '+' : '-'} {formatCurrency(tx.amount)}</span>
                             </p>
                             {tx.upi_id === 'CASH' ? (
                               <p className="text-xs text-slate-400 mt-1">Cash</p>
@@ -594,9 +594,9 @@ export default function App() {
                                   const safeAtIndex = safeUpi.indexOf('@');
                                   // Split at @ for long UPI IDs on mobile
                                   return (
-                                    <p className="text-xs text-slate-400 mt-1 sm:whitespace-nowrap">
-                                      <span className="block sm:inline">{safeUpi.slice(0, safeAtIndex)}</span>
-                                      <span className="block sm:inline">@{safeUpi.slice(safeAtIndex + 1)}</span>
+                                    <p className="text-xs text-slate-400 mt-1">
+                                      <span className="block sm:inline whitespace-nowrap">{safeUpi.slice(0, safeAtIndex)}</span>
+                                      <span className="block sm:inline whitespace-nowrap">@{safeUpi.slice(safeAtIndex + 1)}</span>
                                     </p>
                                   );
                                 }
