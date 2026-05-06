@@ -562,11 +562,6 @@ export default function App() {
                               )}
                             </div>
                             
-                            {/* UPI ID on its own line - full text */}
-                            <p className="text-sm text-slate-400 mb-1 break-all">
-                              {tx.upi_id === 'CASH' ? 'Cash' : tx.upi_id}
-                            </p>
-                            
                             {/* Meta info row */}
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                               <span className="flex items-center gap-1">
@@ -583,10 +578,13 @@ export default function App() {
                             </div>
                           </div>
 
-                          {/* Amount - right aligned */}
+                          {/* Amount - right aligned with UPI below */}
                           <div className="text-right shrink-0">
                             <p className={`text-lg font-bold font-mono ${isCredit ? 'text-emerald-400' : 'text-rose-400'}`}>
                               {isCredit ? '+' : '-'} {formatCurrency(tx.amount)}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1 break-all">
+                              {tx.upi_id === 'CASH' ? 'Cash' : tx.upi_id}
                             </p>
                           </div>
                         </div>
