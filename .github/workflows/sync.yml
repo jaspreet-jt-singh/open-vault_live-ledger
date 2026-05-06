@@ -2,7 +2,7 @@ name: Vault Ledger Sync
 
 on:
   schedule:
-    - cron: '*/20 * * * *' # Every 20 minutes
+    - cron: '7,22,37,52 * * * *'   
   workflow_dispatch: # Manual trigger button on GitHub
 
 jobs:
