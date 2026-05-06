@@ -72,7 +72,8 @@ export default function App() {
   const fetchTransactions = async () => {
     setLoading(true);
     const from = (currentPage - 1) * pageSize;
-    const to = from + pageSize - 1;
+    // Fetch one extra item to check if there's a next page
+    const to = from + pageSize;
 
     let query = supabase
       .from('transactions')
@@ -87,8 +88,10 @@ export default function App() {
     const { data, error } = await query.range(from, to);
 
     if (!error) {
-      setTransactions(data);
-      setHasMore(data.length === pageSize);
+      // If we got pageSize + 1 items, there's a next page
+      setHasMore(data.length > pageSize);
+      // Only display pageSize items (ignore the extra one used for hasMore check)
+      setTransactions(data.slice(0, pageSize));
       
       // Calculate stats from visible transactions only
       let statsQuery = supabase.from('transactions').select('type, amount');
