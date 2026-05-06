@@ -25,13 +25,13 @@ def fetch_and_sync():
     mail.login(EMAIL_USER, EMAIL_PASS)
     mail.select("inbox")
 
-    # 2-Day Sliding Window
+    # 1-Day Sliding Window
     date_since = (datetime.date.today() - datetime.timedelta(days=1)).strftime("%d-%b-%Y")
     
     # Search for HDFC Alerts
     _, search_data = mail.search(None, f'(SINCE "{date_since}" FROM "alerts@hdfcbank.bank.in")')
     mail_ids = search_data[0].split()
-    print(f"Found {len(mail_ids)} emails from HDFC in last 2 days")
+    print(f"Found {len(mail_ids)} emails from HDFC in last 1 day")
 
     # Fetch all recent tx_refs from Supabase ONCE to save network time
     print("Fetching existing records from DB...")

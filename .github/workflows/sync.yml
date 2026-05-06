@@ -3,6 +3,7 @@ name: Vault Ledger Sync
 on:
   schedule:
     - cron: '7,22,37,52 * * * *'   
+      timezone: 'Asia/Kolkata'
   workflow_dispatch: # Manual trigger button on GitHub
 
 jobs:
