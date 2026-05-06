@@ -532,58 +532,67 @@ export default function App() {
                         </div>
                       </form>
                     ) : (
-                      <div className={`flex flex-col gap-3 p-4 backdrop-blur-sm rounded-2xl border transition-all group-hover:shadow-lg group-hover:shadow-black/20 ${
+                      <div className={`relative overflow-hidden transition-all duration-300 ${
                         tx.is_hidden 
-                          ? 'bg-white/[0.02] border-white/[0.02] opacity-60' 
-                          : 'bg-white/5 border-white/5 hover:border-white/10 hover:bg-white/10'
+                          ? 'opacity-50' 
+                          : ''
                       }`}>
+                        <div className={`relative flex flex-col gap-3 p-4 rounded-2xl border ${
+                          tx.is_hidden 
+                            ? 'bg-slate-900/40 border-slate-800/50' 
+                            : 'bg-gradient-to-br from-white/[0.08] to-white/[0.02] border-white/[0.08] hover:border-white/[0.15] hover:from-white/[0.12] hover:to-white/[0.04]'
+                        } transition-all duration-300`}>
+                          {/* Glow effect for non-hidden */}
+                          {!tx.is_hidden && (
+                            <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-purple-500/5 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                          )}
                         {/* Main row - stack on mobile, side-by-side on desktop */}
                         <div className="flex items-start gap-3">
                           {/* Rank & Icon */}
-                          <div className="flex flex-col items-center gap-1 shrink-0 pt-1">
-                            <span className="text-xs text-slate-500 font-mono">#{rankId}</span>
-                            <div className={`p-2 rounded-xl ${isCredit ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}>
+                          <div className="flex flex-col items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] font-medium text-slate-500 tracking-wider">#{rankId}</span>
+                            <div className={`p-2.5 rounded-xl ${isCredit ? 'bg-emerald-500/15 border border-emerald-500/20' : 'bg-rose-500/15 border border-rose-500/20'} backdrop-blur-sm`}>
                               {isCredit ? (
-                                <ArrowDownRight className="w-4 h-4 text-emerald-400" />
+                                <ArrowDownRight className="w-4 h-4 text-emerald-400" strokeWidth={2.5} />
                               ) : (
-                                <ArrowUpRight className="w-4 h-4 text-rose-400" />
+                                <ArrowUpRight className="w-4 h-4 text-rose-400" strokeWidth={2.5} />
                               )}
                             </div>
                           </div>
 
                           {/* Transaction Details - full width, no truncation */}
                           <div className="flex-1 min-w-0">
-                            {/* Sender Name - truncate if no spaces (mobile only), wrap on desktop */}
-                            <div className="flex flex-wrap items-center gap-2 mb-2">
-                              <h3 className={`font-medium text-base leading-snug ${tx.is_hidden ? 'text-slate-400 line-through' : 'text-white'} ${tx.sender_name.includes(' ') ? '' : 'truncate max-w-[200px] sm:max-w-none sm:whitespace-normal'}`}>
+                            {/* Sender Name */}
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <h3 className={`text-base font-semibold tracking-tight ${tx.is_hidden ? 'text-slate-400 line-through' : 'text-white/90'} ${tx.sender_name.includes(' ') ? '' : 'truncate max-w-[200px] sm:max-w-none sm:whitespace-normal'}`}>
                                 {tx.sender_name}
                               </h3>
                               {tx.is_hidden && (
-                                <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-purple-500/20 text-purple-400 uppercase">
-                                  Hidden
+                                <span className="px-2 py-0.5 text-[10px] font-semibold tracking-wide rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/20">
+                                  HIDDEN
                                 </span>
                               )}
                             </div>
                             
                             {/* Meta info row */}
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
+                            <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                              <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.03]">
+                                <Calendar className="w-3 h-3 text-slate-500" />
                                 {date.day} {date.month}
                               </span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
+                              <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.03]">
+                                <Clock className="w-3 h-3 text-slate-500" />
                                 {date.time}
                               </span>
-                              <span className="font-mono text-slate-600 break-all">
-                                Ref: {tx.tx_ref?.toUpperCase()}
+                              <span className="font-mono text-slate-500 tracking-tight">
+                                #{tx.tx_ref?.toUpperCase()}
                               </span>
                             </div>
                           </div>
 
                           {/* Amount + UPI ID + Actions - right aligned column */}
-                          <div className="text-right shrink-0 max-w-[120px] sm:max-w-[180px]">
-                            <p className={`text-lg font-bold font-mono ${isCredit ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          <div className="text-right shrink-0 max-w-[130px] sm:max-w-[180px]">
+                            <p className={`text-xl font-bold tracking-tight ${isCredit ? 'text-emerald-400' : 'text-rose-400'}`}>
                               <span className="whitespace-nowrap">{isCredit ? '+' : '-'} {formatCurrency(tx.amount)}</span>
                             </p>
                             {tx.upi_id === 'CASH' ? (
@@ -609,23 +618,23 @@ export default function App() {
                             
                             {/* Actions - below UPI ID */}
                             {user && (
-                              <div className="flex justify-end gap-1 mt-2">
+                              <div className="flex justify-end gap-1.5 mt-2 pt-2 border-t border-white/[0.06]">
                                 <button 
                                   onClick={() => handleEdit(tx)} 
-                                  className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                                  className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/10 border border-white/[0.06] hover:border-white/[0.12] transition-all duration-200"
                                   title="Edit"
                                 >
-                                  <Edit3 className="w-3.5 h-3.5 text-slate-400 hover:text-purple-400" />
+                                  <Edit3 className="w-3.5 h-3.5 text-slate-400" />
                                 </button>
                                 <button 
                                   onClick={() => handleToggleHide(tx)} 
-                                  className={`p-1.5 rounded-lg transition-colors ${tx.is_hidden ? 'bg-purple-500/20 hover:bg-purple-500/30' : 'hover:bg-slate-500/10'}`}
+                                  className={`p-1.5 rounded-lg border transition-all duration-200 ${tx.is_hidden ? 'bg-purple-500/15 border-purple-500/25 hover:bg-purple-500/25' : 'bg-white/[0.05] border-white/[0.06] hover:bg-white/10 hover:border-white/[0.12]'}`}
                                   title={tx.is_hidden ? 'Unhide' : 'Hide'}
                                 >
                                   {tx.is_hidden ? (
                                     <Eye className="w-3.5 h-3.5 text-purple-400" />
                                   ) : (
-                                    <EyeOff className="w-3.5 h-3.5 text-slate-400 hover:text-slate-300" />
+                                    <EyeOff className="w-3.5 h-3.5 text-slate-400" />
                                   )}
                                 </button>
                               </div>
@@ -633,6 +642,7 @@ export default function App() {
                           </div>
                         </div>
                       </div>
+                    </div>
                     )}
                   </div>
                 );
