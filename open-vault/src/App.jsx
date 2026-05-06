@@ -581,7 +581,7 @@ export default function App() {
                             </div>
                           </div>
 
-                          {/* Amount + UPI ID - right aligned */}
+                          {/* Amount + UPI ID + Actions - right aligned column */}
                           <div className="text-right shrink-0 max-w-[120px] sm:max-w-[180px]">
                             <p className={`text-lg font-bold font-mono ${isCredit ? 'text-emerald-400' : 'text-rose-400'}`}>
                               <span className="whitespace-nowrap">{isCredit ? '+' : '-'} {formatCurrency(tx.amount)}</span>
@@ -606,32 +606,32 @@ export default function App() {
                                 return <p className="text-xs text-slate-400 mt-1 sm:whitespace-nowrap">{safeUpi}</p>;
                               })()
                             )}
+                            
+                            {/* Actions - below UPI ID */}
+                            {user && (
+                              <div className="flex justify-end gap-1 mt-2">
+                                <button 
+                                  onClick={() => handleEdit(tx)} 
+                                  className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                                  title="Edit"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5 text-slate-400 hover:text-purple-400" />
+                                </button>
+                                <button 
+                                  onClick={() => handleToggleHide(tx)} 
+                                  className={`p-1.5 rounded-lg transition-colors ${tx.is_hidden ? 'bg-purple-500/20 hover:bg-purple-500/30' : 'hover:bg-slate-500/10'}`}
+                                  title={tx.is_hidden ? 'Unhide' : 'Hide'}
+                                >
+                                  {tx.is_hidden ? (
+                                    <Eye className="w-3.5 h-3.5 text-purple-400" />
+                                  ) : (
+                                    <EyeOff className="w-3.5 h-3.5 text-slate-400 hover:text-slate-300" />
+                                  )}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
-
-                        {/* Actions - always visible on mobile, hover on desktop */}
-                        {user && (
-                          <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity justify-end sm:justify-start">
-                            <button 
-                              onClick={() => handleEdit(tx)} 
-                              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                              title="Edit"
-                            >
-                              <Edit3 className="w-4 h-4 text-slate-400 hover:text-purple-400" />
-                            </button>
-                            <button 
-                              onClick={() => handleToggleHide(tx)} 
-                              className={`p-2 rounded-lg transition-colors ${tx.is_hidden ? 'bg-purple-500/20 hover:bg-purple-500/30' : 'hover:bg-slate-500/10'}`}
-                              title={tx.is_hidden ? 'Unhide' : 'Hide'}
-                            >
-                              {tx.is_hidden ? (
-                                <Eye className="w-4 h-4 text-purple-400" />
-                              ) : (
-                                <EyeOff className="w-4 h-4 text-slate-400 hover:text-slate-300" />
-                              )}
-                            </button>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
