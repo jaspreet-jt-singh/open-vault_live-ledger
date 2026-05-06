@@ -579,13 +579,27 @@ export default function App() {
                           </div>
 
                           {/* Amount + UPI ID - right aligned */}
-                          <div className="text-right shrink-0 max-w-[120px]">
+                          <div className="text-right shrink-0 max-w-[120px] sm:max-w-[180px]">
                             <p className={`text-lg font-bold font-mono ${isCredit ? 'text-emerald-400' : 'text-rose-400'}`}>
                               {isCredit ? '+' : '-'} {formatCurrency(tx.amount)}
                             </p>
-                            <p className="text-xs text-slate-400 mt-1 break-all leading-relaxed">
-                              {tx.upi_id === 'CASH' ? 'Cash' : tx.upi_id}
-                            </p>
+                            {tx.upi_id === 'CASH' ? (
+                              <p className="text-xs text-slate-400 mt-1">Cash</p>
+                            ) : (
+                              (() => {
+                                const atIndex = tx.upi_id.indexOf('@');
+                                if (atIndex > -1 && tx.upi_id.length > 20) {
+                                  // Split at @ for long UPI IDs on mobile
+                                  return (
+                                    <p className="text-xs text-slate-400 mt-1 sm:whitespace-nowrap">
+                                      <span className="block sm:inline">{tx.upi_id.slice(0, atIndex)}</span>
+                                      <span className="block sm:inline">@{tx.upi_id.slice(atIndex + 1)}</span>
+                                    </p>
+                                  );
+                                }
+                                return <p className="text-xs text-slate-400 mt-1 sm:whitespace-nowrap">{tx.upi_id}</p>;
+                              })()
+                            )}
                           </div>
                         </div>
 
