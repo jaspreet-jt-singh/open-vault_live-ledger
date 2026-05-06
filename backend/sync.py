@@ -26,13 +26,18 @@ def fetch_and_sync():
     mail.select("inbox")
 
     # 2-Day Sliding Window
-    date_since = (datetime.date.today() - datetime.timedelta(days=2)).strftime("%d-%b-%Y")
+    date_since = (datetime.date.today() - datetime.timedelta(days=1)).strftime("%d-%b-%Y")
     
     # Search for HDFC Alerts
     _, search_data = mail.search(None, f'(SINCE "{date_since}" FROM "alerts@hdfcbank.bank.in")')
     mail_ids = search_data[0].split()
     print(f"Found {len(mail_ids)} emails from HDFC in last 2 days")
 
+    # Fetch all recent tx_refs from Supabase ONCE to save network time
+    print("Fetching existing records from DB...")
+    recent_db_tx = supabase.table("transactions").select("tx_ref").execute()
+    existing_refs = {row["tx_ref"] for row in recent_db_tx.data} # Store in a fast Python Set
+    
     for m_id in mail_ids:
         _, msg_data = mail.fetch(m_id, "(RFC822)")
         msg = email.message_from_bytes(msg_data[0][1])
@@ -105,12 +110,11 @@ def fetch_and_sync():
                 seed = f"{amount}-{m_id.decode()}"
                 tx_ref = hashlib.md5(seed.encode()).hexdigest()
 
-            # Check if transaction already exists to prevent burning tx_no sequences
-            existing = supabase.table("transactions").select("id").eq("tx_ref", tx_ref).execute()
-            if len(existing.data) > 0:
+            # Instant memory check instead of network check
+            if tx_ref in existing_refs:
                 print(f"  -> Skipped: Already in database ({tx_ref})")
                 continue # Skip to the next email without attempting insert
-
+                
             # Parse email date for transaction timestamp
             try:
                 dt = parsedate_to_datetime(email_date)
