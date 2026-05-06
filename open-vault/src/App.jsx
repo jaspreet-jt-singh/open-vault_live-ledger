@@ -550,9 +550,9 @@ export default function App() {
 
                           {/* Transaction Details - full width, no truncation */}
                           <div className="flex-1 min-w-0">
-                            {/* Sender Name - truncate if no spaces, wrap if has spaces */}
+                            {/* Sender Name - truncate if no spaces (mobile only), wrap on desktop */}
                             <div className="flex flex-wrap items-center gap-2 mb-2">
-                              <h3 className={`font-medium text-base leading-snug ${tx.is_hidden ? 'text-slate-400 line-through' : 'text-white'} ${tx.sender_name.includes(' ') ? '' : 'truncate max-w-[200px]'}`}>
+                              <h3 className={`font-medium text-base leading-snug ${tx.is_hidden ? 'text-slate-400 line-through' : 'text-white'} ${tx.sender_name.includes(' ') ? '' : 'truncate max-w-[200px] sm:max-w-none sm:whitespace-normal'}`}>
                                 {tx.sender_name}
                               </h3>
                               {tx.is_hidden && (
@@ -578,12 +578,12 @@ export default function App() {
                             </div>
                           </div>
 
-                          {/* Amount - right aligned with UPI below */}
-                          <div className="text-right shrink-0">
+                          {/* Amount + UPI ID - right aligned */}
+                          <div className="text-right shrink-0 max-w-[120px]">
                             <p className={`text-lg font-bold font-mono ${isCredit ? 'text-emerald-400' : 'text-rose-400'}`}>
                               {isCredit ? '+' : '-'} {formatCurrency(tx.amount)}
                             </p>
-                            <p className="text-xs text-slate-400 mt-1 break-all">
+                            <p className="text-xs text-slate-400 mt-1 break-all leading-relaxed">
                               {tx.upi_id === 'CASH' ? 'Cash' : tx.upi_id}
                             </p>
                           </div>
