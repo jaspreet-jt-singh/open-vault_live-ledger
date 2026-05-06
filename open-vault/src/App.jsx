@@ -24,13 +24,27 @@ import {
 export default function App() {
   const [transactions, setTransactions] = useState([]);
   const [user, setUser] = useState(null);
-  const [cashForm, setCashForm] = useState({ amount: "", name: "", type: "debit" });
+  const [manualForm, setManualForm] = useState({ 
+    amount: "", 
+    name: "", 
+    type: "debit",
+    tx_time: "", 
+    upi_id: "",
+    tx_ref: ""
+  });
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, credit: 0, debit: 0 });
 
   // Edit State
   const [editingTx, setEditingTx] = useState(null);
-  const [editForm, setEditForm] = useState({ amount: "", name: "", type: "debit" });
+  const [editForm, setEditForm] = useState({ 
+    amount: "", 
+    name: "", 
+    type: "debit",
+    tx_time: "",
+    upi_id: "",
+    tx_ref: ""
+  });
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -98,42 +112,39 @@ export default function App() {
     await supabase.auth.signInWithOAuth({ provider: 'google' });
   };
 
-  const handleManualCash = async (e) => {
+  const handleManualSubmit = async (e) => {
     e.preventDefault();
     
-    // Fetch current transaction count for unique reference
-    const { count } = await supabase
-      .from('transactions')
-      .select('*', { count: 'exact', head: true });
+    // Generate reference if not provided (10 digits: DDHHMMNNNN)
+    let txRef = manualForm.tx_ref;
+    if (!txRef) {
+      const { count } = await supabase.from('transactions').select('*', { count: 'exact', head: true });
+      const txNum = (count || 0) + 1;
+      const now = new Date();
+      const pad = (n, len = 2) => n.toString().padStart(len, '0');
+      txRef = `${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(txNum, 4)}`;
+    }
     
-    const txNum = (count || 0) + 1;
-    
-    // Generate numeric-only cash reference: DDHHMMNNNN (10 digits)
-    // Format: Day(2) + Hour(2) + Minute(2) + TxNumber(4)
-    const now = new Date();
-    const pad = (n, len = 2) => n.toString().padStart(len, '0');
-    const cashRef = `${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(txNum, 4)}`;
-    
-    const cashData = {
-      // tx_time omitted - database sets it automatically
-      type: cashForm.type,
-      amount: parseFloat(cashForm.amount),
-      sender_name: cashForm.name,
-      upi_id: "CASH",
-      tx_ref: cashRef
+    const insertData = {
+      type: manualForm.type,
+      amount: parseFloat(manualForm.amount),
+      sender_name: manualForm.name,
+      upi_id: manualForm.upi_id || "CASH",
+      tx_ref: txRef,
+      // Only include tx_time if provided, otherwise let DB set it
+      ...(manualForm.tx_time && { tx_time: manualForm.tx_time })
     };
 
     const { data: inserted, error } = await supabase
       .from('transactions')
-      .insert([cashData])
+      .insert([insertData])
       .select()
       .single();
       
     if (!error && inserted) {
-      setCashForm({ amount: "", name: "", type: "debit" });
+      setManualForm({ amount: "", name: "", type: "debit", tx_time: "", upi_id: "", tx_ref: "" });
       setCurrentPage(1);
       fetchTransactions();
-      console.log('Added with DB time:', inserted.tx_time);
     } else {
       alert('Error adding transaction: ' + error?.message);
     }
@@ -141,22 +152,39 @@ export default function App() {
 
   const handleEdit = (tx) => {
     setEditingTx(tx);
+    // Format tx_time for datetime-local input if present
+    const txTime = tx.tx_time 
+      ? tx.tx_time.slice(0, 16).replace(' ', 'T') 
+      : "";
     setEditForm({
       amount: tx.amount.toString(),
       name: tx.sender_name,
-      type: tx.type
+      type: tx.type,
+      tx_time: txTime,
+      upi_id: tx.upi_id || "",
+      tx_ref: tx.tx_ref || ""
     });
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    
+    const updateData = {
+      amount: parseFloat(editForm.amount),
+      sender_name: editForm.name,
+      type: editForm.type,
+      upi_id: editForm.upi_id || "CASH",
+      tx_ref: editForm.tx_ref
+    };
+    
+    // Only update time if provided
+    if (editForm.tx_time) {
+      updateData.tx_time = editForm.tx_time.replace('T', ' ');
+    }
+    
     const { error } = await supabase
       .from('transactions')
-      .update({
-        amount: parseFloat(editForm.amount),
-        sender_name: editForm.name,
-        type: editForm.type
-      })
+      .update(updateData)
       .eq('id', editingTx.id);
 
     if (!error) {
@@ -312,48 +340,78 @@ export default function App() {
                 {showHidden ? 'Showing Hidden' : 'Show Hidden'}
               </button>
             </div>
-            <form onSubmit={handleManualCash} className="p-5 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl">
+            <form onSubmit={handleManualSubmit} className="p-5 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl">
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                <div className="sm:col-span-6">
-                  <label className="text-xs text-slate-400 block mb-2">Description</label>
+                <div className="sm:col-span-4">
+                  <label className="text-xs text-slate-400 block mb-2">Description *</label>
                   <input 
                     required 
                     type="text" 
-                    value={cashForm.name} 
-                    onChange={e => setCashForm({...cashForm, name: e.target.value})} 
+                    value={manualForm.name} 
+                    onChange={e => setManualForm({...manualForm, name: e.target.value})} 
                     className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all placeholder:text-slate-600" 
                     placeholder="e.g., Dinner at NIT, Salary, etc." 
                   />
                 </div>
-                <div className="sm:col-span-3">
-                  <label className="text-xs text-slate-400 block mb-2">Amount (₹)</label>
+                <div className="sm:col-span-2">
+                  <label className="text-xs text-slate-400 block mb-2">Amount (₹) *</label>
                   <input 
                     required 
                     type="number" 
                     step="0.01"
-                    value={cashForm.amount} 
-                    onChange={e => setCashForm({...cashForm, amount: e.target.value})} 
+                    value={manualForm.amount} 
+                    onChange={e => setManualForm({...manualForm, amount: e.target.value})} 
                     className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all placeholder:text-slate-600" 
                     placeholder="0.00" 
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-xs text-slate-400 block mb-2">Type</label>
+                  <label className="text-xs text-slate-400 block mb-2">Type *</label>
                   <select 
-                    value={cashForm.type} 
-                    onChange={e => setCashForm({...cashForm, type: e.target.value})} 
+                    value={manualForm.type} 
+                    onChange={e => setManualForm({...manualForm, type: e.target.value})} 
                     className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
                   >
                     <option value="debit">Debit</option>
                     <option value="credit">Credit</option>
                   </select>
                 </div>
-                <div className="sm:col-span-1 flex items-end">
+                <div className="sm:col-span-4">
+                  <label className="text-xs text-slate-400 block mb-2">UPI ID (blank = CASH)</label>
+                  <input 
+                    type="text" 
+                    value={manualForm.upi_id} 
+                    onChange={e => setManualForm({...manualForm, upi_id: e.target.value})} 
+                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all placeholder:text-slate-600" 
+                    placeholder="e.g., account@okaxis or leave blank" 
+                  />
+                </div>
+                <div className="sm:col-span-4">
+                  <label className="text-xs text-slate-400 block mb-2">Time (blank = current)</label>
+                  <input 
+                    type="datetime-local" 
+                    value={manualForm.tx_time} 
+                    onChange={e => setManualForm({...manualForm, tx_time: e.target.value})} 
+                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all" 
+                  />
+                </div>
+                <div className="sm:col-span-4">
+                  <label className="text-xs text-slate-400 block mb-2">Ref # (blank = auto 10-digit)</label>
+                  <input 
+                    type="text" 
+                    value={manualForm.tx_ref} 
+                    onChange={e => setManualForm({...manualForm, tx_ref: e.target.value})} 
+                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all placeholder:text-slate-600" 
+                    placeholder="e.g., 612563323797 or leave blank" 
+                  />
+                </div>
+                <div className="sm:col-span-4 flex items-end">
                   <button 
                     type="submit" 
-                    className="w-full h-11.5 bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-105 active:scale-95"
+                    className="w-full py-3 bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
                   >
-                    <Plus className="w-5 h-5 mx-auto" />
+                    <Plus className="w-4 h-4" />
+                    Add Transaction
                   </button>
                 </div>
               </div>
@@ -399,7 +457,7 @@ export default function App() {
                     {isEditing ? (
                       <form onSubmit={handleUpdate} className="p-4 bg-white/10 backdrop-blur-xl rounded-2xl border border-purple-500/30 shadow-xl">
                         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                          <div className="sm:col-span-5">
+                          <div className="sm:col-span-4">
                             <label className="text-xs text-slate-400 block mb-1">Description</label>
                             <input 
                               type="text" 
@@ -408,7 +466,7 @@ export default function App() {
                               className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-500/50" 
                             />
                           </div>
-                          <div className="sm:col-span-3">
+                          <div className="sm:col-span-2">
                             <label className="text-xs text-slate-400 block mb-1">Amount</label>
                             <input 
                               type="number" 
@@ -429,7 +487,34 @@ export default function App() {
                               <option value="credit">Credit</option>
                             </select>
                           </div>
-                          <div className="sm:col-span-2 flex gap-2 items-end">
+                          <div className="sm:col-span-4">
+                            <label className="text-xs text-slate-400 block mb-1">UPI ID (blank = CASH)</label>
+                            <input 
+                              type="text" 
+                              value={editForm.upi_id} 
+                              onChange={e => setEditForm({...editForm, upi_id: e.target.value})} 
+                              className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-500/50" 
+                            />
+                          </div>
+                          <div className="sm:col-span-4">
+                            <label className="text-xs text-slate-400 block mb-1">Time</label>
+                            <input 
+                              type="datetime-local" 
+                              value={editForm.tx_time} 
+                              onChange={e => setEditForm({...editForm, tx_time: e.target.value})} 
+                              className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-500/50" 
+                            />
+                          </div>
+                          <div className="sm:col-span-4">
+                            <label className="text-xs text-slate-400 block mb-1">Ref #</label>
+                            <input 
+                              type="text" 
+                              value={editForm.tx_ref} 
+                              onChange={e => setEditForm({...editForm, tx_ref: e.target.value})} 
+                              className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-500/50" 
+                            />
+                          </div>
+                          <div className="sm:col-span-4 flex gap-2 items-end">
                             <button type="submit" className="flex-1 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg text-sm font-medium transition-colors">
                               Save
                             </button>
