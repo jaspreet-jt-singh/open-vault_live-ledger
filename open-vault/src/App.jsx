@@ -539,8 +539,8 @@ export default function App() {
                       }`}>
                         <div className={`relative flex flex-col gap-3 p-4 rounded-2xl border ${
                           tx.is_hidden 
-                            ? 'bg-slate-900/40 border-slate-800/50' 
-                            : 'bg-gradient-to-br from-white/[0.08] to-white/[0.02] border-white/[0.08] hover:border-white/[0.15] hover:from-white/[0.12] hover:to-white/[0.04]'
+                            ? 'bg-slate-900/60 border-slate-700/60' 
+                            : 'bg-slate-800/40 border-slate-700/60 hover:border-slate-600/80'
                         } transition-all duration-300`}>
                           {/* Glow effect for non-hidden */}
                           {!tx.is_hidden && (
@@ -550,12 +550,12 @@ export default function App() {
                         <div className="flex items-start gap-3">
                           {/* Rank & Icon */}
                           <div className="flex flex-col items-center gap-1.5 shrink-0">
-                            <span className="text-[10px] font-medium text-slate-500 tracking-wider">#{rankId}</span>
-                            <div className={`p-2.5 rounded-xl ${isCredit ? 'bg-emerald-500/15 border border-emerald-500/20' : 'bg-rose-500/15 border border-rose-500/20'} backdrop-blur-sm`}>
+                            <span className="text-xs font-semibold text-slate-400">#{rankId}</span>
+                            <div className={`p-2.5 rounded-xl ${isCredit ? 'bg-emerald-500/20 border border-emerald-400/30' : 'bg-rose-500/20 border border-rose-400/30'}`}>
                               {isCredit ? (
-                                <ArrowDownRight className="w-4 h-4 text-emerald-400" strokeWidth={2.5} />
+                                <ArrowDownRight className="w-5 h-5 text-emerald-300" strokeWidth={2.5} />
                               ) : (
-                                <ArrowUpRight className="w-4 h-4 text-rose-400" strokeWidth={2.5} />
+                                <ArrowUpRight className="w-5 h-5 text-rose-300" strokeWidth={2.5} />
                               )}
                             </div>
                           </div>
@@ -564,7 +564,7 @@ export default function App() {
                           <div className="flex-1 min-w-0">
                             {/* Sender Name */}
                             <div className="flex items-center gap-2 mb-1.5">
-                              <h3 className={`text-base font-semibold tracking-tight ${tx.is_hidden ? 'text-slate-400 line-through' : 'text-white/90'} ${tx.sender_name.includes(' ') ? '' : 'truncate max-w-[200px] sm:max-w-none sm:whitespace-normal'}`}>
+                              <h3 className={`text-lg font-bold ${tx.is_hidden ? 'text-slate-500 line-through' : 'text-white'} ${tx.sender_name.includes(' ') ? '' : 'truncate max-w-[200px] sm:max-w-none sm:whitespace-normal'}`}>
                                 {tx.sender_name}
                               </h3>
                               {tx.is_hidden && (
@@ -575,16 +575,16 @@ export default function App() {
                             </div>
                             
                             {/* Meta info row */}
-                            <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                              <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.03]">
-                                <Calendar className="w-3 h-3 text-slate-500" />
+                            <div className="flex flex-wrap items-center gap-2 text-xs">
+                              <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/50">
+                                <Calendar className="w-3.5 h-3.5 text-slate-400" />
                                 {date.day} {date.month}
                               </span>
-                              <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.03]">
-                                <Clock className="w-3 h-3 text-slate-500" />
+                              <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600/50">
+                                <Clock className="w-3.5 h-3.5 text-slate-400" />
                                 {date.time}
                               </span>
-                              <span className="font-mono text-slate-500 tracking-tight">
+                              <span className="font-mono text-sm text-slate-400 font-medium">
                                 #{tx.tx_ref?.toUpperCase()}
                               </span>
                             </div>
@@ -592,11 +592,11 @@ export default function App() {
 
                           {/* Amount + UPI ID + Actions - right aligned column */}
                           <div className="text-right shrink-0 max-w-[130px] sm:max-w-[180px]">
-                            <p className={`text-xl font-bold tracking-tight ${isCredit ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            <p className={`text-2xl font-bold ${isCredit ? 'text-emerald-300' : 'text-rose-300'}`}>
                               <span className="whitespace-nowrap">{isCredit ? '+' : '-'} {formatCurrency(tx.amount)}</span>
                             </p>
                             {tx.upi_id === 'CASH' ? (
-                              <p className="text-xs text-slate-400 mt-1">Cash</p>
+                              <p className="text-sm font-medium text-slate-300 mt-1">Cash</p>
                             ) : (
                               (() => {
                                 const atIndex = tx.upi_id.indexOf('@');
@@ -606,13 +606,13 @@ export default function App() {
                                   const safeAtIndex = safeUpi.indexOf('@');
                                   // Split at @ for long UPI IDs on mobile
                                   return (
-                                    <p className="text-xs text-slate-400 mt-1">
-                                      <span className="block sm:inline whitespace-nowrap">{safeUpi.slice(0, safeAtIndex)}</span>
-                                      <span className="block sm:inline whitespace-nowrap">@{safeUpi.slice(safeAtIndex + 1)}</span>
+                                    <p className="text-sm font-medium text-slate-300 mt-1">
+                                      <span className="block sm:inline">{safeUpi.slice(0, safeAtIndex)}</span>
+                                      <span className="block sm:inline text-slate-400">@{safeUpi.slice(safeAtIndex + 1)}</span>
                                     </p>
                                   );
                                 }
-                                return <p className="text-xs text-slate-400 mt-1 sm:whitespace-nowrap">{safeUpi}</p>;
+                                return <p className="text-sm font-medium text-slate-300 mt-1 sm:whitespace-nowrap">{safeUpi}</p>;
                               })()
                             )}
                             
