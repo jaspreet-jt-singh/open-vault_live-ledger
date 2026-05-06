@@ -70,6 +70,10 @@ def fetch_and_sync():
         if "successfully registered" in body.lower():
             print(f"  -> Skipped: Registration email")
             continue
+        # Skip limit increase / non-transaction emails
+        if "transfer limit" in body.lower() or "limit applicable" in body.lower():
+            print(f"  -> Skipped: Limit notification")
+            continue
         # Check for transaction indicators: Rs., INR, ₹, or amount patterns
         has_currency = "Rs." in body or "INR" in body or "₹" in body
         if not has_currency:
@@ -118,7 +122,23 @@ def fetch_and_sync():
             # Parse email date for transaction timestamp
             try:
                 dt = parsedate_to_datetime(email_date)
-                # Format as YYYY-MM-DD HH:MM:SS for database
+                # Fix 2-digit year parsing - ensure 2026 not 2025
+                if dt.year < 2020:
+                    dt = dt.replace(year=dt.year + 100)
+                
+                # Check if email header had +0530 (IST) timezone
+                # If so, the time is already correct
+                # If not (e.g., +0000 or no timezone), add 5:30
+                has_ist_offset = "+0530" in email_date or "+330" in email_date
+                
+                if dt.tzinfo is not None:
+                    # Strip timezone to get naive datetime
+                    dt = dt.replace(tzinfo=None)
+                
+                if not has_ist_offset:
+                    # Add 5:30 for IST conversion
+                    dt = dt + datetime.timedelta(hours=5, minutes=30)
+                
                 tx_time = dt.strftime("%Y-%m-%d %H:%M:%S")
             except:
                 tx_time = None
