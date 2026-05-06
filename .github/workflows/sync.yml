@@ -2,7 +2,7 @@ name: Vault Ledger Sync
 
 on:
   schedule:
-    - cron: '*/15 * * * *' # Every 15 minutes
+    - cron: '*/20 * * * *' # Every 20 minutes
   workflow_dispatch: # Manual trigger button on GitHub
 
 jobs:
@@ -16,6 +16,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+          cache: 'pip' # Caches dependencies)
 
       - name: Install Dependencies
         run: |
