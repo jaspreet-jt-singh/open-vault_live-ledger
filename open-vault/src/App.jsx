@@ -529,15 +529,15 @@ export default function App() {
                         </div>
                       </form>
                     ) : (
-                      <div className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 backdrop-blur-sm rounded-2xl border transition-all group-hover:shadow-lg group-hover:shadow-black/20 ${
+                      <div className={`flex flex-col gap-3 p-4 backdrop-blur-sm rounded-2xl border transition-all group-hover:shadow-lg group-hover:shadow-black/20 ${
                         tx.is_hidden 
                           ? 'bg-white/[0.02] border-white/[0.02] opacity-60' 
                           : 'bg-white/5 border-white/5 hover:border-white/10 hover:bg-white/10'
                       }`}>
-                        {/* Top row: Icon, Details, Amount */}
-                        <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                        {/* Main row - stack on mobile, side-by-side on desktop */}
+                        <div className="flex items-start gap-3">
                           {/* Rank & Icon */}
-                          <div className="flex flex-col items-center gap-1 shrink-0">
+                          <div className="flex flex-col items-center gap-1 shrink-0 pt-1">
                             <span className="text-xs text-slate-500 font-mono">#{rankId}</span>
                             <div className={`p-2 rounded-xl ${isCredit ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}>
                               {isCredit ? (
@@ -548,10 +548,11 @@ export default function App() {
                             </div>
                           </div>
 
-                          {/* Transaction Details */}
+                          {/* Transaction Details - full width, no truncation */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className={`font-medium truncate ${tx.is_hidden ? 'text-slate-400 line-through' : 'text-white'}`}>
+                            {/* Sender Name - truncate if no spaces, wrap if has spaces */}
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <h3 className={`font-medium text-base leading-snug ${tx.is_hidden ? 'text-slate-400 line-through' : 'text-white'} ${tx.sender_name.includes(' ') ? '' : 'truncate max-w-[200px]'}`}>
                                 {tx.sender_name}
                               </h3>
                               {tx.is_hidden && (
@@ -560,6 +561,13 @@ export default function App() {
                                 </span>
                               )}
                             </div>
+                            
+                            {/* UPI ID on its own line - full text */}
+                            <p className="text-sm text-slate-400 mb-1 break-all">
+                              {tx.upi_id === 'CASH' ? 'Cash' : tx.upi_id}
+                            </p>
+                            
+                            {/* Meta info row */}
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                               <span className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
@@ -569,19 +577,16 @@ export default function App() {
                                 <Clock className="w-3 h-3" />
                                 {date.time}
                               </span>
-                              <span className="font-mono text-slate-600">
+                              <span className="font-mono text-slate-600 break-all">
                                 Ref: {tx.tx_ref?.toUpperCase()}
                               </span>
                             </div>
                           </div>
 
-                          {/* Amount */}
+                          {/* Amount - right aligned */}
                           <div className="text-right shrink-0">
                             <p className={`text-lg font-bold font-mono ${isCredit ? 'text-emerald-400' : 'text-rose-400'}`}>
                               {isCredit ? '+' : '-'} {formatCurrency(tx.amount)}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                              {tx.upi_id === 'CASH' ? 'Cash' : tx.upi_id}
                             </p>
                           </div>
                         </div>
