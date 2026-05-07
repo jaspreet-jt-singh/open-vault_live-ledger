@@ -88,12 +88,23 @@ def fetch_and_sync():
             t_type = "credit" if "credited" in body.lower() else "debit"
             
             # 2. VPA & SENDER NAME PARSING
-            # Matches: "...by VPA [upi_id] [Actual Name] on [DD-MM-YY]..."
-            vpa_match = re.search(r'VPA\s+([a-zA-Z0-9.\-_]+@[a-zA-Z]+)(?:\s+(.*?)\s+on\s+\d{2}-\d{2}-\d{2})?', body)
+            # Try new format first: "Sender: NAME (VPA: upi_id)" or "b. Sender: NAME (VPA: upi_id)"
+            # Also try old format: "by VPA [upi_id] [name] on [date]"
             
-            if vpa_match:
-                upi_id = vpa_match.group(1)
-                extracted_name = vpa_match.group(2)
+            # New format pattern: captures name before (VPA: upi_id)
+            # Name can be ALL CAPS or Title Case, allows letters, spaces, and dots
+            vpa_match_new = re.search(r'Sender:\s*([A-Za-z\s.]+)\s*\(VPA:\s*([a-zA-Z0-9.\-_]+@[a-zA-Z]+)\)', body)
+            
+            # Old format pattern: captures VPA then optional name before "on date"
+            vpa_match_old = re.search(r'VPA\s+([a-zA-Z0-9.\-_]+@[a-zA-Z]+)(?:\s+(.*?)\s+on\s+\d{2}-\d{2}-\d{2})?', body)
+            
+            if vpa_match_new:
+                # New format: Group 1 is name, Group 2 is UPI
+                sender_name = vpa_match_new.group(1).strip().title()
+                upi_id = vpa_match_new.group(2)
+            elif vpa_match_old:
+                upi_id = vpa_match_old.group(1)
+                extracted_name = vpa_match_old.group(2)
                 
                 # Use the real name if found, otherwise fallback to VPA prefix
                 if extracted_name and extracted_name.strip():
@@ -105,8 +116,10 @@ def fetch_and_sync():
                 sender_name = "Unknown"
             
             # 3. TRANSACTION REFERENCE PARSING
-            # Matches both "Ref No. 123" and "reference number is 123"
-            ref_match = re.search(r'(?:reference number is|Ref(?:\.| No\.))\s*(\d{12})', body, re.IGNORECASE)
+            # Try multiple patterns:
+            # 1. New format: "UPI Reference No.: 123456789012345" (15 digits)
+            # 2. Old format: "Ref No. 123456789012" or "reference number is 123456789012" (12 digits)
+            ref_match = re.search(r'(?:UPI Reference No\.|Reference No\.|reference number is|Ref(?:\.\s| No\.))\s*[:\.]?\s*(\d{12,16})', body, re.IGNORECASE)
             
             if ref_match:
                 tx_ref = ref_match.group(1)
